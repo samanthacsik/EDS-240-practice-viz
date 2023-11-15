@@ -1,0 +1,14 @@
+---
+title: "Postal Ecology"
+editor_options: 
+  chunk_output_type: console
+---
+
+<https://osf.io/4z78d>
+
+```{r}
+library(tidyverse)
+
+raw_postal <- read_csv(here::here("postal-ecology", "data", "AllCountries_SRTM_ASTER.csv"))
+```
+

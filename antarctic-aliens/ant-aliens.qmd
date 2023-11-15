@@ -1,0 +1,12 @@
+---
+title: "Antarctic aliens"
+editor_options: 
+  chunk_output_type: console
+---
+
+<https://figshare.com/articles/dataset/Introduced_and_invasive_alien_species_of_Antarctica_and_the_Southern_Ocean_Islands/22056647>
+
+```{r}
+aliens <- read_csv(here::here("antarctic-aliens", "data", "AntarcticAliens_dataset.csv"))
+```
+

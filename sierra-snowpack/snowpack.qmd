@@ -1,0 +1,37 @@
+---
+title: "Sierra snowpack"
+editor_options: 
+  chunk_output_type: console
+---
+
+## Sierra snowpack 
+
+<https://datadryad.org/stash/dataset/doi:10.6078/D1941T>
+
+```{r}
+library(tidyverse)
+
+y2019 <- read_csv(here::here("sierra-snowpack", "data", "Whole_WY_2019.csv")) |> 
+  janitor::clean_names()
+```
+
+
+```{r}
+snowpack_files <- list.files(path = "sierra-snowpack/data", pattern = ".csv")
+
+# for loop to read in each file ---
+for (i in 1:length(snowpack_files)){
+  
+  # get object name from file name ----
+  file_name <- snowpack_files[i]
+  message("Reading in: ", file_name)
+  split_name <- stringr::str_split_1(file_name, "_")
+  site_name <- split_name[1] 
+  message("Saving as: ", site_name)
+  
+  # read in csv and assign to our object name ----
+  assign(x = site_name, value = readr::read_csv(here::here("data", "raw_data", file_name)))
+  
+}
+```
+

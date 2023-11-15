@@ -1,0 +1,71 @@
+---
+title: "Drought"
+editor_options: 
+  chunk_output_type: console
+---
+
+## US Droughts
+
+<https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-06-14>
+
+## setup
+```{r}
+#..........................load packages.........................
+library(tidyverse)
+library(ggstream)
+
+#..........................import data...........................
+tuesdata <- tidytuesdayR::tt_load('2021-07-20')
+drought <- tuesdata$drought
+```
+
+## clean data
+```{r}
+#..........................wrangle data..........................
+drought_clean <- drought |>
+
+  # select cols of interest ----
+  select(date = valid_start, state_abb, drought_lvl, area_pct) |> 
+
+  # add year col ----
+  mutate(year = year(date)) |>
+
+  # add drought level conditions names ----
+  mutate(drought_lvl_long = factor(drought_lvl,
+                            levels = c("D4", "D3", "D2", "D1","D0", "None"),
+                            labels = c("Exceptional Drought", "Extreme Drought",
+                                       "Severe Drought", "Moderate Drought", "Abnormally Dry", 
+                                       "No Drought"))) |>
+  
+  # reorder cols ----
+  select(date, year, state_abb, drought_lvl, drought_lvl_long, area_pct)
+ 
+```
+
+## area plot (CA, total area experiencing drought)
+```{r}
+drought_clean |> 
+  filter(state_abb == "CA",
+         drought_lvl != "None") |> 
+  group_by(date) |> 
+  summarize(total_perc_area_drought = sum(area_pct)) |> 
+  ggplot(aes(x = date, y = total_perc_area_drought)) +
+  geom_area()
+```
+
+## stacked area graph (CA)
+See: <https://en.wikipedia.org/wiki/Droughts_in_California>
+```{r}
+drought_clean |> 
+  filter(drought_lvl != "None",
+         state_abb == "CA") |> 
+  ggplot(drought_states, mapping = aes(x = date, y = area_pct, fill = drought_lvl_long)) +
+  geom_area(position = position_stack(reverse = TRUE))
+```
+
+## stream graph
+
+## line plot
+
+## connected scatterplot
+
