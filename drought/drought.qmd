@@ -60,12 +60,98 @@ drought_clean |>
   filter(drought_lvl != "None",
          state_abb == "CA") |> 
   ggplot(drought_states, mapping = aes(x = date, y = area_pct, fill = drought_lvl_long)) +
-  geom_area(position = position_stack(reverse = TRUE))
+  geom_area(position = position_stack(reverse = TRUE)) +
+  scale_fill_manual(values = c("#853904", "#FF0000", "#FFC100", "#FFD965", "#FFFF00"))
 ```
 
 ## stream graph
 
 ## line plot
 
+```{r}
+drought_clean |> 
+  filter(state_abb == "CA", 
+         drought_lvl != "None") |> 
+  group_by(date) |> 
+  summarize(total_perc_area_drought = sum(area_pct)) |> 
+  filter(date >= "2002-07-02" & date <= "2002-09-24") |> 
+  ggplot(aes(x = date, y = total_perc_area_drought)) +
+  geom_line()
+```
+
+
 ## connected scatterplot
+
+
+
+
+
+
+
+
+
+
+---- copied from website repo
+```{r}
+#| eval: false
+#| echo: false
+# total drought CA
+# TEST <- drought_clean |> 
+#   filter(state_abb == "CA",
+#          drought_lvl != "None") |> 
+#   group_by(date) |> 
+#   summarize(total_perc_area_drought = sum(area_pct)) #|> 
+#   ggplot(aes(x = date, y = total_perc_area_drought)) +
+#   geom_area()
+```
+
+
+```{r}
+#| eval: false
+#| echo: false
+
+#Midwest: 2011-2012
+# month on x-axis, area on y-axis, group = year, color = state_abb
+
+# drought_clean |> 
+#   filter(drought_lvl == "D4",
+#          #drought_lvl != "None",
+#          year != "2021",
+#          state_abb == "CA") |>
+#   group_by(year, month) |> # , drought_lvl
+#   summarize(avg_area = mean(area_pct)) |> 
+#   ggplot(aes(x = month, y = avg_area, group = year, color = year)) +
+#   geom_line() +
+#   #facet_wrap(~drought_lvl) +
+#   gghighlight::gghighlight(max(avg_area) > 50) 
+# 
+# drought_clean |> 
+#   filter(drought_lvl == "D1",
+#          #drought_lvl != "None",
+#          year != "2021",
+#          state_abb == "CA") |>
+#   group_by(year, month) |> # , drought_lvl
+#   summarize(avg_area = mean(area_pct)) |> 
+#   ggplot(aes(x = month, y = avg_area, group = year, color = year)) +
+#   geom_line() +
+#   #facet_wrap(~drought_lvl) +
+#   gghighlight::gghighlight(max(avg_area) > 50) 
+```
+
+
+```{r}
+# D4 (Exceptional Drought only)
+# 
+# test2 <- drought_clean |> 
+#   group_by(year, month, day, state_abb) |> 
+#   summarize(total_perc_area_drought = sum(area_pct))
+# 
+# # D4
+# drought_clean |> 
+#   filter(drought_lvl == "D4",
+#          year %in% c(2010:2012)) |> 
+#   ggplot(aes(x = date, y = area_pct, group = state_abb, color = state_abb)) +
+#   geom_line() +
+#   gghighlight::gghighlight(max(area_pct) > 75)
+```
 

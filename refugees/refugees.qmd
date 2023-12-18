@@ -11,9 +11,8 @@ editor_options:
 ```{r}
 library(tidyverse)
 library(refugees)
-```
+library(gghighlight)
 
-```{r}
 pop_clean <- population |> 
   filter(coo_name != "Unknown") |> 
   select(year, origin = coo_name, refugees) |> 
@@ -22,14 +21,28 @@ pop_clean <- population |>
   summarize(total_refugees = sum(refugees)) |> 
   filter(date > "2012-01-01")
 
-ggplot(pop_clean, aes(x = date, y = total_refugees, group = origin)) +
-  geom_line(color = "lightgray") +
-  theme_classic()
 ```
 
+## line plot
+```{r}
+ggplot(pop_clean, aes(x = date, y = total_refugees, group = origin)) +
+  geom_line() 
 
+```
 
+## highlight lines
+```{r}
+max_countries <- pop_clean |> 
+  group_by(origin) |> 
+  summarize(
+    max_num_ref = max(total_refugees)
+  ) |> 
+  arrange(desc(max_num_ref))
 
+ggplot(pop_clean, aes(x = date, y = total_refugees, group = origin)) +
+  geom_line(aes(color = origin)) +
+  gghighlight(max(total_refugees) >= 5865447, use_direct_label = FALSE)
+```
 
 
 

@@ -1,0 +1,40 @@
+---
+title: "bees"
+editor_options: 
+  chunk_output_type: console
+---
+
+data download here: https://www.kaggle.com/datasets/m000sey/save-the-honey-bees/
+some helpful eco info: https://www.ars.usda.gov/oc/br/ccd/index/
+all reports here: https://usda.library.cornell.edu/concern/publications/rn301137d?locale=en
+definitions here: https://downloads.usda.library.cornell.edu/usda-esmis/files/rn301137d/4m90gc28p/gq67m7401/hcny0823.pdf
+
+- `num_colonies`: colonies counted at the start of the quarter
+- `max_colonies`: `num_colonies` + all colonies that moved into the state that quarter (can't be used to calculate a national level of max colonies since colonies are counted in every state they were in during the quarter i.e. there is duplication)
+- `percent_lost`: number of colonies lost / `max_colonies`
+
+```{r}
+library(tidyverse)
+
+bees <- read_csv(here::here("bees", "save_the_bees.csv"))
+
+bees_wrangled <- bees |> 
+  mutate(quarter_months = case_when(
+    quarter == 1 ~ "Jan - Mar",
+    quarter == 2 ~ "Apr - Jun",
+    quarter == 3 ~ "Jul - Sep",
+    quarter == 4 ~ "Oct - Dec"
+  )) |> 
+  mutate(quarter_months = as.factor(quarter_months)) |> 
+  
+  
+```
+
+
+```{r}
+bees |> 
+  group_by(year, quarter) |> 
+  ggplot(aes(x = state, y = varroa_mites)) +
+  geom_col()
+```
+

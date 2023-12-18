@@ -1,0 +1,34 @@
+---
+title: "bats"
+editor_options: 
+  chunk_output_type: console
+---
+
+<https://search.dataone.org/view/urn%3Auuid%3Aa3434b3f-f640-48ce-aa5c-68bdf2f7cd49>
+
+```{r}
+library(tidyverse)
+library(ggExtra)
+bats <- read_csv(here::here("bats", "Lear_et_al_2023_BatAgaveData.csv"))
+```
+
+```{r}
+bats_wrangled <- bats |> 
+  select(region, site, visits, vpm, flybys, fbpm, elev, 
+         tot_umbs, tot_grps, open_umbs, open_grps,
+         UmbPerTot, GrpPerTot)
+```
+
+visits ~ flybys
+```{r}
+plot1 <- ggplot(bats, aes(x = flybys, y = visits,  color = region)) +
+  geom_point()
+
+ggMarginal(plot1, type = "histogram", groupColour = TRUE, groupFill = TRUE)
+```
+
+visits ~ total_umbs
+```{r}
+ggplot(bats, aes(x = dens_stlk, y = visits, color = region)) +
+  geom_point()
+```

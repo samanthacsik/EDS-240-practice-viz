@@ -1,0 +1,138 @@
+---
+title: "salaries"
+editor_options: 
+  chunk_output_type: console
+---
+
+<https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-03-05>
+
+Setup
+```{r}
+#..........................load packages.........................
+library(tidyverse)
+
+#..........................import data...........................
+jobs_gender <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-05/jobs_gender.csv")
+```
+
+The above data has the following variables: 
+
+- year
+- occupation categories
+- total workers for each industry; also broken down by number of male and number of female workers
+- percentage of females in each industry; MISSING PERCENTAGE OF MALES
+
+```{r}
+#..........................wrangle data..........................
+jobs_gender_clean <- jobs_gender |> 
+  
+  # add cols (needed for dumbbell plot) ----
+  mutate(percent_male = 100 - percent_female, # % of males within each industry was missing; % female already included
+         difference_earnings_male_female = total_earnings_male - total_earnings_female, # diff in earnings between M & F
+         avg_salary = ((total_earnings_male + total_earnings_female)/2)) |> # avg salary of an industry (will be used for ordering); TRY INSTEAD BY `total_earnings`
+  
+  # rearrange columns ----
+  relocate(year, major_category, minor_category, occupation,
+          total_workers, workers_male, workers_female,
+          percent_male, percent_female,
+          total_earnings, total_earnings_male, total_earnings_female, difference_earnings_male_female,
+          wage_percent_of_male, avg_salary) |> 
+  
+  # drop rows with missing earning data ----
+  drop_na(total_earnings_male, total_earnings_female) |> 
+  
+  # make occupation a factor ----
+  mutate(occupation = as_factor(occupation)) |> 
+  
+  # ---- these next steps are necessary for creating dumbbell plots ----
+
+  # classify job into one of three groups ----
+  mutate(percentage_group_long = case_when(
+    percent_female >= 75 ~ "Occupations that are 75%+ female",
+    percent_female >= 45 & percent_female <= 55 ~ "Occupations that are 45-55% female",
+    percent_male >= 75 ~ "Occupations that are 75%+ male"
+  )) |> 
+  
+  # column with short names for groups ----
+  mutate(percentage_group_short = case_when(
+    percent_female >= 75 ~ "f75",
+    percent_female >= 45 & percent_female <= 55 ~ "f50",
+    percent_male >= 75 ~"m75"
+  )) |> 
+  
+  # relevel factors ----
+  mutate(percentage_group_short = fct_relevel(percentage_group_short, "f75", "f50", "m75"),
+         percentage_group_long = fct_relevel(percentage_group_long, "Occupations that are 75%+ female", "Occupations that are 45-55% female", "Occupations that are 75%+ male")) 
+
+#....................investigate missing data....................
+# NA for wage_percent_of_male where occupations have small sample size; see metadata: https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-03-05
+see_NAs <- jobs_gender_clean %>% 
+  naniar::miss_var_summary() 
+```
+
+Pre-plotting wrangling
+```{r}
+#................label groups by % male vs. female...............
+jobs_divided <- jobs_gender_clean |> 
+  filter(year == 2016) |> 
+  mutate(perc_group = case_when(
+    percent_female >= 75 ~ "f75",
+    percent_female >= 45 & percent_female <= 55 ~ "f50",
+    percent_male >= 75 ~"m75"
+  )) |> 
+  mutate(perc_group_label = case_when(
+    percent_female >= 75 ~ "Occupations that are 75%+ female",
+    percent_female >= 45 & percent_female <= 55 ~ "Occupations that are 45-55% female",
+    percent_male >= 75 ~ "Occupations that are 75%+ male"
+  )) |> 
+  mutate(perc_group = fct_relevel(perc_group, "f75", "f50", "m75"),
+         perc_group_label = fct_relevel(perc_group_label, "Occupations that are 75%+ female", "Occupations that are 45-55% female", "Occupations that are 75%+ male")) |> 
+  drop_na(perc_group)
+
+#................selected occupations for plotting...............
+select_occupations_75perc_female <- c("Dancers and choreographers", "Librarians", "Elementary and middle school teachers",
+                                      "Registered nurses", "Dietitians and nutritionists", "Occupational therapists",
+                                      "Secretaries and administrative assistants", "Medical assistants", "Hairdressers, hairstylists, and cosmetologists", 
+                                      "Veterinary assistants and laboratory animal caretakers")
+
+select_occupations_45_55perc_female <- c("Legislators", "Natural sciences managers", "Medical scientists", 
+                                         "Postsecondary teachers", "Designers", "Bartenders", "Real estate brokers and sales agents",
+                                         "Pharmacists", "Insurance sales agents", "Editors")
+
+select_occupations_75perc_male <- c("Chief executives", "Software developers, applications and systems software", "Mathematicians", 
+                                    "Chemical engineers", "Civil engineers", "Conservation scientists and foresters",
+                                    "Police and sheriff's patrol officers", "Chefs and head cooks",
+                                    "Construction and building inspectors", "Aircraft pilots and flight engineers")
+
+select_occupations <- c(select_occupations_75perc_female, select_occupations_45_55perc_female, select_occupations_75perc_male)
+
+#........filter dataset for subset of jobs we want to plot.......
+jobs_for_plotting <- jobs_divided |> 
+  filter(occupation %in% select_occupations)
+```
+
+Barplot
+```{r}
+# env_data_jobs <- jobs_gender_clean |> 
+#   select(year, major_category, minor_category, occupation, total_earnings_male, total_earnings_female) |> 
+#   filter(year == 2016) |> 
+#   filter(occupation %in% c("Environmental scientists and geoscientists",
+#                            "Conservation scientists and foresters", "Database administrators", 
+#                            "Software developers, applications and systems software", "Web developers")) |> 
+#   pivot_longer(cols = c(total_earnings_female, total_earnings_male), names_to = "group", values_to = "total_earnings") |> 
+#   mutate(sex = str_remove(group, pattern = "total_earnings_"))
+
+jobs_gender_clean |> 
+  
+  # filter for year 2016 ----
+  filter(year == 2016) |> 
+  
+  # keep top 10 jobs with most total_earnings ----
+  slice_max(order_by = total_earnings, n = 10) |> 
+  
+  ggplot(aes(x = fct_reorder(occupation, total_earnings), y = total_earnings)) +
+  geom_col() +
+  coord_flip()
+
+```
+
