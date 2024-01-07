@@ -1,0 +1,11 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+library(tidyverse)
+
+trees <- read_csv("https://cn.dataone.org/cn/v2/resolve/https%3A%2F%2Fpasta.lternet.edu%2Fpackage%2Fdata%2Feml%2Fknb-lter-hfr%2F324%2F5%2Ffc971e193c698d19a3c142de77deb460")
+```
+

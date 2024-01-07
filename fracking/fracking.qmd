@@ -40,9 +40,6 @@ fracking_clean <- fracking |>
   # select relevant cols ----
   select(datetime_start, year, state_name, county_name, well_name, total_base_water_volume) |> 
   
-  # convert state_name from string to factor ----
-  mutate(state_name = as.factor(state_name)) |> 
-  
   # filter out non-state names ----
   filter(!state_name %in% c("Beaver", "Beckham", "Harper", "Hemphill", "Midland", "Red River", "Roosevelt", "Rusk", "State", "WARD")) |> 
   
@@ -79,7 +76,7 @@ fracking_clean <- fracking |>
   # remove rows that have a ? mark ----
   filter(!str_detect(sn, "\\?")) |> 
   
-  # make all works uppercase (so that we can covert abb to state names) ----
+  # make all works uppercase (so that we can covert abbreviations to state names) ----
   mutate(sn = str_to_upper(sn)) |> 
   
   # mutate abbrs to full state names ----
@@ -99,9 +96,38 @@ fracking_clean <- fracking |>
   # move state_abb col after state_name col
   relocate(state_abb, .after = state_name) |> 
   
+  # convert state_name & state_abb from string to factor ----
+  mutate(state_name = as.factor(state_name),
+         state_abb = as.factor(state_abb)) |> 
+  
   # remove obs that don't have a measurement for total_base_water_volume (NA)
   drop_na(total_base_water_volume_gal)
 ```
+
+
+-----
+
+```{r}
+fracking_clean |> 
+  filter(state_name %in% c("Texas", "Colorado", "North Dakota")) |> 
+  filter(year == 2015) |> 
+  filter(total_base_water_volume_gal < 70000000) |>
+  group_by(state_name) |> 
+  mutate(state_name = fct_relevel(state_name, c("Texas", "Colorado", "North Dakota"))) |> 
+  ggplot(aes(x = state_name, y = total_base_water_volume_gal, fill = state_name)) +
+  geom_violin(alpha = 0.5) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  labs(x = "State", y = "Total water volume used per fracking job (gallons)") +
+  theme(
+    legend.position = "none"
+  )
+```
+
+
+-----
+
+
 
 ## State land area dataframe
 ```{r}
@@ -178,6 +204,17 @@ ggplot(fracking_top3_2015, aes(x = total_base_water_volume_gal, y = state_name, 
   theme(legend.position = "none")
 ```
 
+## SCATTER
+```{r}
+ggplot(fracking_top3_2015, aes(x = state_name, y = total_base_water_volume_gal, fill = state_name)) +
+  geom_point(alpha = 0.5, position = "jitter") +
+  scale_y_continuous(labels = scales::label_comma()) +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  labs(x = "State", y = "Total water volume used per fracking job (gallons)") +
+  theme(
+    legend.position = "none"
+  )
+```
 
 
 

@@ -1,0 +1,19 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+library(tidyverse)
+library(janitor)
+
+tuesdata <- tidytuesdayR::tt_load('2022-04-12')
+deaths <- tuesdata$death_source |> clean_names() |> rename("deaths" = 4)
+fuel_access <- tuesdata$fuel_access |> clean_names() |> rename("access" = 4)
+
+joined_data <- full_join(deaths, fuel_access) |> 
+  mutate(continent = countrycode::countrycode(sourcevar = entity,
+                                              origin = "country.name",
+                                              destination = "continent"))
+```
+

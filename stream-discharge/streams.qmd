@@ -1,0 +1,17 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-sbc&identifier=3001
+
+```{r}
+abc <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-sbc.3001.9&entityid=e2a98c649f9d97b9d8c3288b6f6b43d0")
+```
+
+```{r}
+ggplot(abc, aes(x = discharge_lps, y = water_temperature_celsius)) +
+  geom_point()
+```
+
