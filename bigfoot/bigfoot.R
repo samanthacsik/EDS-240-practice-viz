@@ -35,7 +35,7 @@ showtext_auto()
 ##                                wrangle data                              ----
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ca_sightings_counts <- bigfoot |>
+ca_season_counts <- bigfoot |>
   filter(state == "California") |> 
   group_by(season) |> 
   count(season) |> 
@@ -45,11 +45,19 @@ ca_sightings_counts <- bigfoot |>
   mutate(season = fct_relevel(season, "Spring", "Summer", "Fall", "Winter")) |> 
   mutate(perc_sightings = (n/sum(n))*100)
 
-ca_sightings_counties <- bigfoot |> 
+ca_county_counts <- bigfoot |> 
   filter(state == "California") |> 
   group_by(county) |> 
   count(county) |> 
   rename(sightings = n)
+
+ca_indiv_sightings <- bigfoot |> 
+  filter(state == "California") 
+
+# ca_county_coords <- bigfoot |> 
+#   select(county, longitude, latitude)
+# 
+# ca_county_counts <- full_join(ca_county_counts, ca_county_coords)
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ##                            prep viz components                           ----
@@ -66,16 +74,13 @@ highlight_summer_palette <- c("Spring" = alpha("#357266", 1/3),
                               "Fall" = alpha("#983A06", 1/3), 
                               "Winter" = alpha("#005F71", 1/3))
 
-theme_colors <- c(gray_text = "#757473",
-                  panel_beige = "#EFEFEF")
-
 #.......................create plot labels.......................
 title <- "Summer is the season of Bigfoot sightings in CA"
-subtitle <- "Winter, on the other hand, is a rare time to catch a glimpse of Sasquatch"
-caption <- "Source: Bigfoot Field Researchers Organization (BFRO)"
+subtitle <- "Winter, on the other hand, is a rare time to spot Sasquatch"
+caption <- "Source: Bigfoot Field Researchers Organization"
 
 # create theme ----
-waffle_theme <- function(){
+bigfood_theme <- function(){
   theme_void() +
     theme(
       plot.title = element_text(family = "ultra", 
@@ -100,7 +105,7 @@ waffle_theme <- function(){
 
 
 # base waffle ----
-waffle1 <- ggplot(ca_sightings_counts, aes(fill = season, values = n)) +
+waffle1 <- ggplot(ca_season_counts, aes(fill = season, values = n)) +
   geom_waffle(color = "white", size = 0.3, 
               n_rows = 10, make_proportional = FALSE) +
   coord_equal() +
@@ -120,7 +125,7 @@ waffle1 +
   scale_fill_manual(values = highlight_summer_palette)
 
 # proportional waffle ----
-waffle2 <- ggplot(ca_sightings_counts, aes(fill = season, values = n)) +
+waffle2 <- ggplot(ca_season_counts, aes(fill = season, values = n)) +
   geom_waffle(color = "white", size = 0.3, 
               n_rows = 10, make_proportional = TRUE) +
   coord_equal(clip = "off") +
@@ -151,9 +156,6 @@ waffle2 <- ggplot(ca_sightings_counts, aes(fill = season, values = n)) +
 
 waffle2 
 
-
-
-
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ##                                    map                                   ----
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -175,8 +177,10 @@ ca_counties <- county_geo |>
   filter(state_name == "California") |> 
   rename(county = namelsad)
 
-ca_sightings <- full_join(ca_counties, ca_sightings_counties) #|> 
+ca_sightings <- full_join(ca_counties, ca_county_counts) #|> 
   #mutate(sightings = replace_na(sightings, 0))
+
+ca_indiv_sightings <- full_join(ca_counties, ca_indiv_sightings)
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,4 +201,8 @@ ggplot(ca_sightings) +
 #230C0F
 #2E2836
 
+ca_indiv_sightings |> 
+  ggplot() +
+  geom_sf(linewidth = 0.2, color = "white", fill = "gray") +
+  geom_point(aes(x = longitude, y = latitude, color = season))
   

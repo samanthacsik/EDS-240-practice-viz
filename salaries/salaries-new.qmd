@@ -1,0 +1,166 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                    setup                                 ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#..........................load packages.........................
+library(tidyverse)
+library(ggbump)
+
+#..........................import data...........................
+jobs <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-05/jobs_gender.csv")
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                wrangle data                              ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+jobs_clean <- jobs |>
+
+  # add cols (needed for dumbbell plot) ----
+  mutate(percent_male = 100 - percent_female, # % of females within each industry was already included
+       difference_earnings = total_earnings_male - total_earnings_female) |>  # diff in earnings between M & F
+
+  # rearrange columns ----
+  relocate(year, major_category, minor_category, occupation,
+           total_workers, workers_male, workers_female,
+           percent_male, percent_female,
+           total_earnings, total_earnings_male, total_earnings_female, difference_earnings,
+           wage_percent_of_male) |>
+
+  # drop rows with missing earning data ----
+  drop_na(total_earnings_male, total_earnings_female) #|>
+
+  # make occupation a factor ----
+#   mutate(occupation = as.factor(occupation)) |>
+# 
+# # ---- this next step is for creating our dumbbell plots ----
+# 
+# # classify jobs by percentage male or female ----
+#   mutate(group_label = case_when(
+#     percent_female >= 75 ~ "Occupations that are 75%+ female",
+#     percent_female >= 45 & percent_female <= 55 ~ "Occupations that are 45-55% female",
+#     percent_male >= 75 ~ "Occupations that are 75%+ male"
+#   ))
+# 
+# ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ##                              create subset df                            ----
+# ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 
+# #....guarantee the same random samples each time we run code.....
+# set.seed(0)
+# 
+# #.........get 10 random jobs that are 75%+ female (2016).........
+# f75 <- jobs_clean |>
+#   filter(year == 2016, group_label == "Occupations that are 75%+ female") |>
+#   slice_sample(n = 10)
+# 
+# #..........get 10 random jobs that are 75%+ male (2016)..........
+# m75 <- jobs_clean |>
+#   filter(year == 2016, group_label == "Occupations that are 75%+ male") |>
+#   slice_sample(n = 10)
+# 
+# #........get 10 random jobs that are 45-55%+ female (2016).......
+# f50 <- jobs_clean |>
+#   filter(year == 2016, group_label == "Occupations that are 45-55% female") |>
+#   slice_sample(n = 10)
+# 
+# #.......combine dfs & relevel factors (for plotting order).......
+# subset_jobs <- rbind(f75, m75, f50) |>
+#   mutate(group_label = fct_relevel(group_label, 
+#                                    "Occupations that are 75%+ female",
+#                                    "Occupations that are 45-55% female", 
+#                                    "Occupations that are 75%+ male"))
+
+total_earnings_years <- jobs_clean |> 
+  select(year, occupation, total_earnings)
+
+salary_rank_by_year <- total_earnings_years |> 
+  group_by(year) |> 
+  mutate(
+    rank = row_number(desc(total_earnings))
+  ) |> 
+  ungroup() |> 
+  mutate(rank = as.numeric(rank)) |> 
+  arrange(rank, year)
+
+max_rank <- 8
+todays_top <- salary_rank_by_year %>% 
+  filter(year == 2016, rank <= max_rank) %>% 
+  pull(occupation) 
+
+color_pal <- viridisLite::magma(12)
+occupation_colors <- c(
+  "Physicians and surgeons" = color_pal[3],
+  "Nurse anesthetists" = color_pal[4],
+  "Dentists" = color_pal[5],
+  "Architectural and engineering managers" = color_pal[6],
+  "Lawyers" = color_pal[7], 
+  "Podiatrists" = color_pal[8],
+  "Chief executives" = color_pal[9],
+  "Petroleum engineers" = color_pal[10]
+)
+
+title <- "Top eight highest paying occupations"
+subtitle <- "Rank by number of the most lucrative occupations in 2016"
+caption <- "Data Source: Bureau of Labor and Statistics & US Census Bureau, courtesy of TidyTuesday (March 5, 2019)"
+
+bump_chart_basic <- salary_rank_by_year %>% 
+  filter(occupation %in% todays_top) %>% 
+  ggplot(aes(year, rank, col = occupation)) + 
+  geom_point(shape = '|', stroke = 6) +
+  geom_bump(linewidth = 1) +
+  # add occupation names to left-side of plot ----
+  geom_text(
+    data = salary_rank_by_year %>% filter(year == 2013, occupation %in% todays_top),
+    aes(label = occupation),
+    hjust = 1,
+    nudge_x = -0.1,
+    fontface = 'bold'
+  ) +
+  # add 2016 ranking numbers along right-side of plot ----
+  geom_text(
+    data = salary_rank_by_year %>% filter(year == 2016, occupation %in% todays_top),
+    aes(label = rank),
+    hjust = 0,
+    nudge_x = 0.1,
+    size = 5,
+    fontface = 'bold'
+  ) +
+  # add 2013 & 2016 at the top of the plot ----
+  annotate(
+    'text',
+    x = c(2013, 2016),
+    y = c(-0.2, -0.2),
+    label = c(2013, 2016),
+    hjust = c(0, 1),
+    vjust = 1,
+    size = 5,
+    fontface = 'bold',
+    color = "grey40"
+  ) +
+  scale_y_reverse(position = 'right', breaks = seq(16, 2, -2)) +
+  scale_color_manual(values = occupation_colors) +
+  coord_cartesian(xlim = c(2010, 2016), ylim = c(11, 0.25), 
+                  expand = T,
+                  clip = "off") +
+  labs(title = "Top eight highest paying occupations",
+       subtitle = "Rank by number of the most lucrative occupations in 2016",
+       caption = "Data Source: TidyTuesday (March 5, 2019)") +
+  theme_void() +
+  theme(
+    legend.position = "blank",
+    plot.background = element_rect(fill = "#FFF8F4",
+                                   color = "#FFF8F4"),
+    plot.margin = margin(1, 1, 1, 1, "cm")
+  )
+
+bump_chart_basic 
+```
+

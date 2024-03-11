@@ -1,0 +1,181 @@
+--- 
+title: "bigfoot sightings"
+editor_options: 
+  chunk_output_type: console
+---
+
+Inspired by: 
+<https://github.com/doehm/tidytues?tab=readme-ov-file#week-25-ufo-sightings>
+
+## Setup
+
+```{r}
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                    setup                                 ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#..........................load packages.........................
+library(waffle)
+library(tidyverse)
+library(tidytext)
+library(showtext)
+library(ggtext)
+
+#..........................import data...........................
+tuesdata <- tidytuesdayR::tt_load('2022-09-13')
+bigfoot <- tuesdata$bigfoot
+
+#..........................import fonts..........................
+# font_add_google(name = "Peralta", family = "peralta")
+font_add_google(name = "Ultra", family = "ultra")
+font_add_google(name = "Josefin Sans", family = "josefin")
+
+#................enable {showtext} for rendering.................
+showtext_auto()
+```
+
+## Data wrangling
+```{r}
+# state_sightings <- bigfoot |> 
+#   group_by(state) |> 
+#   count(sort = TRUE)
+# 
+# ggplot() +
+#   geom_rect(data = state_sightings, aes(fill = n)) +
+#   geofacet::facet_geo(~state)
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                    tbd                                   ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#..................bigfoot sighting descriptors..................
+# bigfoot_descriptors <- c("footprints",
+#                          "sighting", "sightings")
+# 
+# activity <- c("hunting", "hunt", "hiking", "camping")
+# 
+# ca_obs_text_raw <- ca_bigfoot |>
+#   select(observed, classification) |> 
+#   mutate(observed = str_replace(string = observed, pattern = " foot prints ", replacement = " footprints "))
+
+#....................unnest observation text.....................
+# ca_observation_text <- ca_obs_text_raw |> 
+#   unnest_tokens(output = word, input = observed) |> 
+#   anti_join(stop_words)
+
+# ............................plot freq...........................
+# counted_obs <- ca_observation_text |> 
+#   count(word, sort = TRUE)
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                    tbd                                   ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# sighting_classes <- ca_bigfoot |> 
+#   count(classification)
+```
+
+
+### Create theme
+```{r}
+#..........................create theme..........................
+bigfoot_theme <- function(){
+  theme_void() +
+    theme(
+      plot.title = element_text(family = "ultra", 
+                                size = 18, 
+                                margin = margin(1, 0, 0.3, 1, "lines")),
+      plot.subtitle = element_text(family = "josefin",
+                                             size = 16,
+                                             margin = margin(0, 0, 0.75, 0, "lines")),
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      legend.text = element_text(family = "josefin",
+                                 size = 12),
+      plot.caption = element_text(family = "josefin",
+                                  size = 10,
+                                  color = theme_colors["gray_text"], 
+                                  margin = margin(2, 2, 3, 0, "lines")),
+      plot.background = element_rect(fill = theme_colors["panel_beige"], 
+                                     color = theme_colors["panel_beige"]),
+      plot.margin = margin(1, 1, 1, 1, "cm")
+    )
+}
+```
+
+### Waffle chart
+```{r}
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                               data wrangling                             ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ca_season_counts <- bigfoot |> 
+  filter(state == "California") |> 
+  group_by(season) |> 
+  count(season) |> 
+  filter(season != "Unknown") |> 
+  arrange(match(season, c("Spring", "Summer", "Fall", "Winter"))) |> 
+  ungroup() |> 
+  mutate(season = fct_relevel(season, "Spring", "Summer", "Fall", "Winter")) |> 
+  mutate(perc_sightings = (n/sum(n))*100)
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                Waffle chart                              ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#........................create palette..........................
+season_palette <- c("Spring" = "#357266", 
+                    "Summer" = "#FFB813", 
+                    "Fall" = "#983A06", 
+                    "Winter" = "#005F71")
+
+#.......................create plot labels.......................
+title <- "Summer is the season of Bigfoot sightings in CA"
+subtitle <- "Winter, on the other hand, is a rare time to spot Sasquatch"
+caption <- "Source: Bigfoot Field Researchers Organization"
+
+#......................create waffle chart.......................
+ggplot(ca_season_counts, aes(fill = season, values = n)) +
+  geom_waffle(color = "white", size = 0.3, 
+              n_rows = 10, make_proportional = FALSE) +
+  coord_equal() +
+  scale_fill_manual(values = season_palette) +
+  labs(title = title,
+       subtitle = subtitle,
+       caption = caption) +
+  theme_void() +
+  theme(
+    plot.title = element_text(family = "ultra", 
+                              size = 18, 
+                              hjust = 0.5,
+                              margin = margin(1, 0, 0.3, 1, "lines")),
+    plot.subtitle = element_text(family = "josefin",
+                                 size = 16,
+                                 hjust = 0.5,
+                                 margin = margin(0, 0, 0.75, 0, "lines")),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.text = element_text(family = "josefin",
+                               size = 12),
+    plot.caption = element_text(family = "josefin",
+                                size = 10,
+                                color = "#757473", 
+                                margin = margin(2, 2, 3, 0, "lines")),
+    plot.background = element_rect(fill = "#EFEFEF", 
+                                   color = "#EFEFEF"),
+    plot.margin = margin(t = 1, r = 1.5, b = 1, l = 1.5, "cm")
+  )
+```
+
+### TBD
+```{r}
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                  bar chart                               ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ggplot(sighting_classes, aes(x = classification, y = n)) +
+  geom_col()
+```
+
